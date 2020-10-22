@@ -24,6 +24,7 @@ struct UnexpectedEventException : std::runtime_error
 class Controller : public IEventHandler
 {
 public:
+
     Controller(IPort& p_displayPort, IPort& p_foodPort, IPort& p_scorePort, std::string const& p_config);
 
     Controller(Controller const& p_rhs) = delete;
@@ -38,6 +39,16 @@ private:
         int y;
         int ttl;
     };
+
+    Segment createNewSegment(const Segment& currentHead){
+        Segment newHead;
+        newHead.x = currentHead.x + ((m_currentDirection & 0b01) ? (m_currentDirection & 0b10) ? 1 : -1 : 0);
+        newHead.y = currentHead.y + (not (m_currentDirection & 0b01) ? (m_currentDirection & 0b10) ? 1 : -1 : 0);
+        newHead.ttl = currentHead.ttl;
+        return newHead;
+    }
+
+    bool checkLostCondition();
 
     IPort& m_displayPort;
     IPort& m_foodPort;
