@@ -40,15 +40,7 @@ private:
         int ttl;
     };
 
-    Segment createNewSegment(const Segment& currentHead){
-        Segment newHead;
-        newHead.x = currentHead.x + ((m_currentDirection & 0b01) ? (m_currentDirection & 0b10) ? 1 : -1 : 0);
-        newHead.y = currentHead.y + (not (m_currentDirection & 0b01) ? (m_currentDirection & 0b10) ? 1 : -1 : 0);
-        newHead.ttl = currentHead.ttl;
-        return newHead;
-    }
 
-    bool checkLostCondition();
 
     IPort& m_displayPort;
     IPort& m_foodPort;
@@ -59,6 +51,26 @@ private:
 
     Direction m_currentDirection;
     std::list<Segment> m_segments;
+
+    Segment createNewSegment(const Segment& currentHead){
+        Segment newHead;
+        newHead.x = currentHead.x + ((m_currentDirection & 0b01) ? (m_currentDirection & 0b10) ? 1 : -1 : 0);
+        newHead.y = currentHead.y + (not (m_currentDirection & 0b01) ? (m_currentDirection & 0b10) ? 1 : -1 : 0);
+        newHead.ttl = currentHead.ttl;
+        return newHead;
+    }
+
+    bool checkLostCondition(Segment &newHead)
+    {
+        for (auto segment : m_segments) {
+            if (segment.x == newHead.x and segment.y == newHead.y)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
 };
 
 } // namespace Snake
