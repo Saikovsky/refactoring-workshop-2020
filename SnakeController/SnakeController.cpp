@@ -213,25 +213,45 @@ Controller::Segment Controller::getNewHead() const
     return newHead;
 }
 
+template<typename T>
+    class wrapper {
+        Event* ptr;
+    public:
+        template<typename Trait> Trait* object() const {
+            return static_cast<Trait*>(static_cast<T*>(ptr));
+        }
+    };
 void Controller::receive(std::unique_ptr<Event> e)
 {
-    try {
-        handleTimePassed(*dynamic_cast<EventT<TimeoutInd> const&>(*e));
-    } catch (std::bad_cast&) {
-        try {
-            handleDirectionChange(*dynamic_cast<EventT<DirectionInd> const&>(*e));
-        } catch (std::bad_cast&) {
-            try {
-                handleFoodPositionChange(*dynamic_cast<EventT<FoodInd> const&>(*e));
-            } catch (std::bad_cast&) {
-                try {
-                    handleNewFood(*dynamic_cast<EventT<FoodResp> const&>(*e));
-                } catch (std::bad_cast&) {
-                    throw UnexpectedEventException();
-                }
-            }
-        }
+    try{
+    switch(e->getMessageId()){
+        case 0x20:
+
+            handleTimePassed(*static_cast<EventT<TimeoutInd> const&>(*e));
+            break;
+
+        case 0x10:
+
+        handleDirectionChange(*static_cast<EventT<DirectionInd> const&>(*e));
+        break;
+
+    case 0x30:
+
+        handleFoodPositionChange(*static_cast<EventT<FoodInd> const&>(*e));
+        break;
+
+    case 0x42:
+        handleNewFood(*static_cast<EventT<FoodResp> const&>(*e));
+        break;
+        default:
+            throw UnexpectedEventException();
     }
+    }
+    catch(std::bad_cast&)
+            {
+                    throw UnexpectedEventException();
+            }
+   
 }
 
 } // namespace Snake
