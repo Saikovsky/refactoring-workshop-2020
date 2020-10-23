@@ -19,9 +19,9 @@ UnexpectedEventException::UnexpectedEventException()
 Controller::Controller(IPort& p_displayPort, IPort& p_foodPort, IPort& p_scorePort, std::string const& p_config)
     : m_displayPort(p_displayPort),
       m_foodPort(p_foodPort),
-      m_scorePort(p_scorePort),
-      m_paused(false)
+      m_scorePort(p_scorePort)
 {
+
     std::istringstream istr(p_config);
     char w, f, s, d;
 
@@ -62,18 +62,18 @@ Controller::Controller(IPort& p_displayPort, IPort& p_foodPort, IPort& p_scorePo
     }
 }
 
-bool Controller::isSegmentAtPosition(int x, int y) const
+bool isSegmentAtPosition(int x, int y)
 {
     return m_segments.end() !=  std::find_if(m_segments.cbegin(), m_segments.cend(),
         [x, y](auto const& segment){ return segment.x == x and segment.y == y; });
 }
 
-bool Controller::isPositionOutsideMap(int x, int y) const
+bool isPositionOutsideMap(int x, int y)
 {
     return x < 0 or y < 0 or x >= m_mapDimension.first or y >= m_mapDimension.second;
 }
 
-void Controller::sendPlaceNewFood(int x, int y)
+void sendPlaceNewFood(int x, int y)
 {
     m_foodPosition = std::make_pair(x, y);
 
@@ -85,7 +85,7 @@ void Controller::sendPlaceNewFood(int x, int y)
     m_displayPort.send(std::make_unique<EventT<DisplayInd>>(placeNewFood));
 }
 
-void Controller::sendClearOldFood()
+void sendClearOldFood()
 {
     DisplayInd clearOldFood;
     clearOldFood.x = m_foodPosition.first;
@@ -119,7 +119,7 @@ bool perpendicular(Direction dir1, Direction dir2)
 }
 } // namespace
 
-Controller::Segment Controller::calculateNewHead() const
+Segment calculateNewHead()
 {
     Segment const& currentHead = m_segments.front();
 
@@ -175,12 +175,12 @@ void Controller::updateSegmentsIfSuccessfullMove(Segment const& newHead)
     }
 }
 
-void Controller::handleTimeoutInd()
+void handleTimeoutInd()
 {
     updateSegmentsIfSuccessfullMove(calculateNewHead());
 }
 
-void Controller::handleDirectionInd(std::unique_ptr<Event> e)
+void handleDirectionInd(std::unique_ptr<Event> e)
 {
     auto direction = payload<DirectionInd>(*e).direction;
 
@@ -189,7 +189,7 @@ void Controller::handleDirectionInd(std::unique_ptr<Event> e)
     }
 }
 
-void Controller::updateFoodPosition(int x, int y, std::function<void()> clearPolicy)
+void updateFoodPosition(int x, int y, std::function<void()> clearPolicy)
 {
     if (isSegmentAtPosition(x, y) || isPositionOutsideMap(x,y)) {
         m_foodPort.send(std::make_unique<EventT<FoodReq>>());
@@ -200,21 +200,21 @@ void Controller::updateFoodPosition(int x, int y, std::function<void()> clearPol
     sendPlaceNewFood(x, y);
 }
 
-void Controller::handleFoodInd(std::unique_ptr<Event> e)
+void handleFoodInd(std::unique_ptr<Event> e)
 {
     auto receivedFood = payload<FoodInd>(*e);
 
     updateFoodPosition(receivedFood.x, receivedFood.y, std::bind(&Controller::sendClearOldFood, this));
 }
 
-void Controller::handleFoodResp(std::unique_ptr<Event> e)
+void handleFoodResp(std::unique_ptr<Event> e)
 {
     auto requestedFood = payload<FoodResp>(*e);
 
     updateFoodPosition(requestedFood.x, requestedFood.y, []{});
 }
 
-void Controller::handlePauseInd(std::unique_ptr<Event> e)
+void handlePauseInd(std::unique_ptr<Event> e)
 {
     m_paused = not m_paused;
 }
